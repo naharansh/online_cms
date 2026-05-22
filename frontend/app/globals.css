@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&family=Raleway:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  --primary: #757FEF;
+  --primary-light: #e3e5fc;
+  --body-bg: #F5F7FA;
+  --body-color: #5B5B98;
+  --border-color: #EEF0F6;
+  --success: #00B69B;
+  --danger: #EE368C;
+  --warning: #FFBC2B;
+  --dark: #260944;
+}
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  color: var(--body-color);
+  background-color: var(--body-bg);
+}
+
+.heading-font {
+  font-family: 'Raleway', sans-serif;
+}
