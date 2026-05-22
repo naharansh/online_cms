@@ -8,7 +8,7 @@ export default function CourseImage({ course, className }) {
 
   function getLocalImage(c) {
     const filename = c.title.replace(/[\/\\:*?"<>|]/g, '').trim();
-    return `/course_images/${filename}.png`;
+    return `/course_images/${encodeURIComponent(filename)}.png`;
   }
 
   if (showFallback) {
