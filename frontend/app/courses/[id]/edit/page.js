@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { courseAPI, moduleAPI, categoryAPI } from '@/lib/api';
+import { courseAPI, moduleAPI, categoryAPI, taskAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { FiPlus, FiTrash2, FiSave, FiX, FiUpload, FiVideo, FiFileText, FiArrowUp, FiArrowDown, FiChevronDown, FiChevronUp, FiEye } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiSave, FiX, FiUpload, FiVideo, FiFileText, FiArrowUp, FiArrowDown, FiChevronDown, FiChevronUp, FiEye, FiBook } from 'react-icons/fi';
 import Loader from '@/components/Loader';
 import toast from 'react-hot-toast';
 
@@ -27,8 +27,13 @@ export default function EditCoursePage() {
   const [newModuleTitle, setNewModuleTitle] = useState('');
   const [addingLesson, setAddingLesson] = useState(null);
   const [lessonForm, setLessonForm] = useState({
-    title: '', description: '', video_duration: '', is_free: false,
+    title: '', description: '', video_duration: '', is_free: false, notesFile: null,
   });
+  const [editingNotes, setEditingNotes] = useState(null);
+  const [notesFile, setNotesFile] = useState(null);
+  const [lessonTasks, setLessonTasks] = useState({});
+  const [addingTask, setAddingTask] = useState(null);
+  const [taskForm, setTaskForm] = useState({ title: '', description: '' });
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
@@ -110,7 +115,7 @@ export default function EditCoursePage() {
   };
 
   const addLesson = async (moduleIndex) => {
-    const { title, description, video_duration, is_free } = lessonForm;
+    const { title, description, video_duration, is_free, notesFile } = lessonForm;
     if (!title.trim()) { toast.error('Lesson title is required'); return; }
     const mod = modules[moduleIndex];
     try {
@@ -119,17 +124,11 @@ export default function EditCoursePage() {
       formData.append('description', description || '');
       formData.append('video_duration', video_duration || '');
       formData.append('is_free', is_free);
-      const res = await moduleAPI.addLesson(mod.id, formData);
-      const newModules = [...modules];
-      newModules[moduleIndex].lessons.push({
-        id: res.data.id,
-        title,
-        description,
-        video_duration,
-        is_free,
-      });
-      setModules(newModules);
-      setLessonForm({ title: '', description: '', video_duration: '', is_free: false });
+      if (notesFile) formData.append('notes', notesFile);
+      await moduleAPI.addLesson(mod.id, formData);
+      const courseRes = await courseAPI.getById(id);
+      setModules(courseRes.data.modules || []);
+      setLessonForm({ title: '', description: '', video_duration: '', is_free: false, notesFile: null });
       setAddingLesson(null);
       toast.success('Lesson added');
     } catch (err) {
@@ -146,6 +145,59 @@ export default function EditCoursePage() {
       setModules(newModules);
     } catch (err) {
       toast.error('Failed to remove lesson');
+    }
+  };
+
+  const saveNotes = async (lessonId, moduleIndex, lessonIndex) => {
+    if (!notesFile) { toast.error('Please select a PDF file'); return; }
+    try {
+      const formData = new FormData();
+      formData.append('notes', notesFile);
+      await moduleAPI.updateLesson(lessonId, formData);
+      const courseRes = await courseAPI.getById(id);
+      setModules(courseRes.data.modules || []);
+      setEditingNotes(null);
+      setNotesFile(null);
+      toast.success('Notes PDF uploaded');
+    } catch (err) {
+      toast.error('Failed to upload notes: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const openNotes = (lesson, moduleIndex, lessonIndex) => {
+    setNotesFile(null);
+    setEditingNotes({ lessonId: lesson.id, moduleIndex, lessonIndex });
+  };
+
+  const fetchTasks = async (lessonId) => {
+    try {
+      const res = await taskAPI.getByLesson(lessonId);
+      setLessonTasks(prev => ({ ...prev, [lessonId]: res.data }));
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const addTask = async (lessonId) => {
+    if (!taskForm.title.trim()) { toast.error('Task title is required'); return; }
+    try {
+      await taskAPI.create({ lesson_id: lessonId, title: taskForm.title, description: taskForm.description });
+      setTaskForm({ title: '', description: '' });
+      setAddingTask(null);
+      fetchTasks(lessonId);
+      toast.success('Task added');
+    } catch (err) {
+      toast.error('Failed to add task');
+    }
+  };
+
+  const removeTask = async (taskId, lessonId) => {
+    try {
+      await taskAPI.delete(taskId);
+      fetchTasks(lessonId);
+      toast.success('Task removed');
+    } catch (err) {
+      toast.error('Failed to remove task');
     }
   };
 
@@ -292,23 +344,108 @@ export default function EditCoursePage() {
                         {(!mod.lessons || mod.lessons.length === 0) && (
                           <p className="text-sm text-gray-400 text-center py-4">No lessons in this module</p>
                         )}
-                        {mod.lessons?.map((lesson, lessonIdx) => (
-                          <div key={lesson.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg group">
-                            <div className="flex items-center gap-3">
-                              <FiVideo className="text-indigo-400" size={16} />
-                              <span className="text-sm text-gray-700">{lesson.title}</span>
-                              {lesson.video_duration && (
-                                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{lesson.video_duration}</span>
-                              )}
-                              {lesson.is_free && (
-                                <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Free</span>
-                              )}
+                        {mod.lessons?.map((lesson, lessonIdx) => {
+                          const isEditing = editingNotes?.lessonId === lesson.id;
+                          const tasks = lessonTasks[lesson.id];
+                          return (
+                          <div key={lesson.id} className="border border-gray-100 rounded-lg overflow-hidden mb-2">
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 group">
+                              <div className="flex items-center gap-3">
+                                <FiVideo className="text-indigo-400" size={16} />
+                                <span className="text-sm text-gray-700">{lesson.title}</span>
+                                {lesson.video_duration && (
+                                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{lesson.video_duration}</span>
+                                )}
+                                {lesson.is_free && (
+                                  <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Free</span>
+                                )}
+                                {lesson.notes_url && <FiFileText size={14} className="text-indigo-400" title="Has PDF notes" />}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button type="button" onClick={() => { openNotes(lesson, modIdx, lessonIdx); fetchTasks(lesson.id); }} className="p-1.5 text-indigo-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition" title="Edit Notes & Tasks">
+                                  <FiBook size={15} />
+                                </button>
+                                <button type="button" onClick={() => removeLesson(modIdx, lessonIdx)} className="p-1.5 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+                                  <FiX size={16} />
+                                </button>
+                              </div>
                             </div>
-                            <button type="button" onClick={() => removeLesson(modIdx, lessonIdx)} className="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                              <FiX size={16} />
-                            </button>
+                            {isEditing && (
+                              <div className="p-4 border-t border-gray-100 bg-white">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Notes PDF</label>
+                                {lesson.notes_url && (
+                                  <div className="mb-2 flex items-center gap-2 text-xs" style={{ color: '#00B69B' }}>
+                                    <FiFileText size={14} />
+                                    PDF notes already uploaded
+                                  </div>
+                                )}
+                                <label className="flex items-center gap-3 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition mb-3">
+                                  <FiFileText className="text-gray-400" size={18} />
+                                  <span className="text-sm text-gray-500">{notesFile ? notesFile.name : 'Upload PDF notes'}</span>
+                                  <input type="file" accept=".pdf" onChange={e => setNotesFile(e.target.files[0])} className="hidden" />
+                                </label>
+                                <div className="flex items-center gap-2 mb-4">
+                                  <button type="button" onClick={() => saveNotes(lesson.id, modIdx, lessonIdx)} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition">
+                                    Upload
+                                  </button>
+                                  <button type="button" onClick={() => setEditingNotes(null)} className="px-3 py-1.5 text-gray-500 hover:text-gray-700 text-xs transition">
+                                    Close
+                                  </button>
+                                </div>
+
+                                <div className="border-t border-gray-100 pt-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h5 className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Tasks</h5>
+                                    <button type="button" onClick={() => setAddingTask(lesson.id)} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium transition">
+                                      <FiPlus size={12} /> Add Task
+                                    </button>
+                                  </div>
+                                  {tasks && tasks.length > 0 ? (
+                                    <div className="space-y-1.5">
+                                      {tasks.map(t => (
+                                        <div key={t.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                                          <div>
+                                            <span className="text-sm text-gray-700">{t.title}</span>
+                                            {t.description && <p className="text-xs text-gray-400 mt-0.5">{t.description}</p>}
+                                          </div>
+                                          <button type="button" onClick={() => removeTask(t.id, lesson.id)} className="text-red-300 hover:text-red-500 text-xs">
+                                            <FiX size={14} />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-gray-400 text-center py-2">No tasks added yet</p>
+                                  )}
+                                  {addingTask === lesson.id && (
+                                    <div className="mt-2 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
+                                      <input
+                                        type="text" value={taskForm.title} onChange={e => setTaskForm(prev => ({ ...prev, title: e.target.value }))}
+                                        placeholder="Task title"
+                                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                      />
+                                      <textarea
+                                        value={taskForm.description} onChange={e => setTaskForm(prev => ({ ...prev, description: e.target.value }))}
+                                        placeholder="Task description (optional)"
+                                        rows={2}
+                                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                                      />
+                                      <div className="flex items-center gap-2">
+                                        <button type="button" onClick={() => addTask(lesson.id)} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition">
+                                          Add
+                                        </button>
+                                        <button type="button" onClick={() => { setAddingTask(null); setTaskForm({ title: '', description: '' }); }} className="px-3 py-1.5 text-gray-500 hover:text-gray-700 text-xs transition">
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {addingLesson === modIdx ? (
@@ -321,6 +458,14 @@ export default function EditCoursePage() {
                             <div className="md:col-span-2">
                               <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
                               <textarea value={lessonForm.description} onChange={e => setLessonForm(prev => ({ ...prev, description: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm resize-none" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Notes PDF</label>
+                              <label className="flex items-center gap-3 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition">
+                                <FiFileText className="text-gray-400" size={18} />
+                                <span className="text-sm text-gray-500">{lessonForm.notesFile ? lessonForm.notesFile.name : 'Upload PDF notes'}</span>
+                                <input type="file" accept=".pdf" onChange={e => setLessonForm(prev => ({ ...prev, notesFile: e.target.files[0] }))} className="hidden" />
+                              </label>
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
@@ -337,7 +482,7 @@ export default function EditCoursePage() {
                             <button type="button" onClick={() => addLesson(modIdx)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
                               Add Lesson
                             </button>
-                            <button type="button" onClick={() => { setAddingLesson(null); setLessonForm({ title: '', description: '', video_duration: '', is_free: false }); }} className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm transition">
+                            <button type="button" onClick={() => { setAddingLesson(null); setLessonForm({ title: '', description: '', video_duration: '', is_free: false, notesFile: null }); }} className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm transition">
                               Cancel
                             </button>
                           </div>

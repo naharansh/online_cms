@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { dashboardAPI, courseAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { FiBookOpen, FiUsers, FiBarChart2, FiPlus, FiEdit2, FiTrash2, FiEye, FiChevronRight, FiTrendingUp, FiClipboard, FiGrid } from 'react-icons/fi';
+import { FiBookOpen, FiUsers, FiBarChart2, FiPlus, FiEdit2, FiTrash2, FiEye, FiChevronRight, FiTrendingUp, FiClipboard, FiGrid, FiStar } from 'react-icons/fi';
 import Loader from '@/components/Loader';
 import toast from 'react-hot-toast';
 
@@ -163,6 +163,8 @@ export default function InstructorDashboard() {
                 {[
                   { label: 'Create Course', href: '/courses/create', icon: FiPlus, color: '#757FEF', bg: 'rgba(117, 127, 239, 0.1)' },
                   { label: 'Student Performance', href: '/dashboard/instructor/performance', icon: FiBarChart2, color: '#00B69B', bg: 'rgba(0, 182, 155, 0.1)' },
+                  { label: 'Task Review', href: '/dashboard/instructor/tasks', icon: FiClipboard, color: '#FFBC2B', bg: 'rgba(255, 188, 43, 0.15)' },
+                  { label: 'Assignment Grading', href: '/dashboard/instructor/assignments', icon: FiStar, color: '#FF6B6B', bg: 'rgba(255, 107, 107, 0.1)' },
                   { label: 'Browse Courses', href: '/courses', icon: FiBookOpen, color: '#2DB6F5', bg: 'rgba(45, 182, 245, 0.1)' },
                 ].map((link) => (
                   <Link key={link.href} href={link.href} className="flex items-center justify-between px-3 py-2.5 rounded-xl no-underline transition hover:bg-gray-50 group">

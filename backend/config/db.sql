@@ -180,6 +180,30 @@ CREATE TABLE IF NOT EXISTS payments (
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS lesson_tasks (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  lesson_id INT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS task_submissions (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  task_id INT NOT NULL,
+  student_id INT NOT NULL,
+  submission_text TEXT DEFAULT NULL,
+  file_url VARCHAR(500) DEFAULT NULL,
+  score INT DEFAULT NULL,
+  feedback TEXT DEFAULT NULL,
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  graded_at TIMESTAMP NULL DEFAULT NULL,
+  FOREIGN KEY (task_id) REFERENCES lesson_tasks(id) ON DELETE CASCADE,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_task_submission (task_id, student_id)
+);
+
 CREATE TABLE IF NOT EXISTS notifications (
   id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,

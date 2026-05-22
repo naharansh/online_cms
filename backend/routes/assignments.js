@@ -10,7 +10,9 @@ router.get('/course/:courseId', authenticate, async (req, res) => {
       `SELECT a.*,
         (SELECT id FROM assignment_submissions WHERE assignment_id = a.id AND student_id = ?) as submission_id,
         (SELECT score FROM assignment_submissions WHERE assignment_id = a.id AND student_id = ?) as my_score,
-        (SELECT feedback FROM assignment_submissions WHERE assignment_id = a.id AND student_id = ?) as my_feedback
+        (SELECT feedback FROM assignment_submissions WHERE assignment_id = a.id AND student_id = ?) as my_feedback,
+        (SELECT COUNT(*) FROM assignment_submissions WHERE assignment_id = a.id) as submission_count,
+        (SELECT COUNT(*) FROM assignment_submissions WHERE assignment_id = a.id AND score IS NOT NULL) as graded_count
       FROM assignments a WHERE a.course_id = ? ORDER BY a.created_at DESC`,
       [req.user.id, req.user.id, req.user.id, req.params.courseId]
     );

@@ -31,7 +31,7 @@ export default function CreateCoursePage() {
 
   const [addingLesson, setAddingLesson] = useState(null);
   const [lessonForm, setLessonForm] = useState({
-    title: '', description: '', video_duration: '', is_free: false,
+    title: '', description: '', video_duration: '', is_free: false, notes_file: null,
   });
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function CreateCoursePage() {
   };
 
   const addLesson = (moduleIndex) => {
-    const { title, description, video_duration, is_free } = lessonForm;
+    const { title, description, video_duration, is_free, notes_file } = lessonForm;
     if (!title.trim()) { toast.error('Lesson title is required'); return; }
     const newModules = [...modules];
     newModules[moduleIndex].lessons.push({
@@ -86,9 +86,10 @@ export default function CreateCoursePage() {
       description,
       video_duration,
       is_free,
+      notes_file,
     });
     setModules(newModules);
-    setLessonForm({ title: '', description: '', video_duration: '', is_free: false });
+    setLessonForm({ title: '', description: '', video_duration: '', is_free: false, notes_file: null });
     setAddingLesson(null);
     toast.success('Lesson added');
   };
@@ -136,6 +137,9 @@ export default function CreateCoursePage() {
 
           if (lesson.video_file) {
             lessonFormData.append('video', lesson.video_file);
+          }
+          if (lesson.notes_file) {
+            lessonFormData.append('notes', lesson.notes_file);
           }
           lessonFormData.append('video_duration', lesson.video_duration || '');
           lessonFormData.append('is_free', lesson.is_free);
@@ -279,6 +283,9 @@ export default function CreateCoursePage() {
                               {lesson.is_free && (
                                 <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Free</span>
                               )}
+                              {lesson.notes_file && (
+                                <FiFileText size={14} className="text-indigo-400" title="Has PDF notes" />
+                              )}
                             </div>
                             <button type="button" onClick={() => removeLesson(modIdx, lessonIdx)} className="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
                               <FiX size={16} />
@@ -297,6 +304,14 @@ export default function CreateCoursePage() {
                             <div className="md:col-span-2">
                               <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
                               <textarea value={lessonForm.description} onChange={e => setLessonForm(prev => ({ ...prev, description: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm resize-none" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Notes PDF</label>
+                              <label className="flex items-center gap-3 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition">
+                                <FiFileText className="text-gray-400" size={18} />
+                                <span className="text-sm text-gray-500">{lessonForm.notes_file ? lessonForm.notes_file.name : 'Upload PDF notes'}</span>
+                                <input type="file" accept=".pdf" onChange={e => setLessonForm(prev => ({ ...prev, notes_file: e.target.files[0] }))} className="hidden" />
+                              </label>
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-600 mb-1">Duration (e.g., 10:30)</label>

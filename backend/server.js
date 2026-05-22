@@ -18,6 +18,7 @@ app.use('/api/modules', require('./routes/modules'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/enrollments', require('./routes/enrollments'));
 app.use('/api/progress', require('./routes/progress'));
+app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/quizzes', require('./routes/quizzes'));
 app.use('/api/certificates', require('./routes/certificates'));

@@ -114,7 +114,7 @@ router.put('/:id', authenticate, authorize('instructor', 'admin'), upload.single
     if (difficulty_level) { updateFields.push('difficulty_level = ?'); updateParams.push(difficulty_level); }
     if (language) { updateFields.push('language = ?'); updateParams.push(language); }
     if (duration) { updateFields.push('duration = ?'); updateParams.push(duration); }
-    if (is_published !== undefined) { updateFields.push('is_published = ?'); updateParams.push(is_published); }
+    if (is_published !== undefined) { updateFields.push('is_published = ?'); updateParams.push(is_published === true || is_published === 'true' || is_published === 1 || is_published === '1' ? 1 : 0); }
 
     if (updateFields.length > 0) {
       updateParams.push(req.params.id);

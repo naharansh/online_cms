@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { dashboardAPI } from '@/lib/api';
-import { FiBookOpen, FiSearch } from 'react-icons/fi';
+import { FiBookOpen, FiSearch, FiEdit2 } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminCoursesPage() {
@@ -82,6 +83,7 @@ export default function AdminCoursesPage() {
                 <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: '#757FEF' }}>Lessons</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: '#757FEF' }}>Revenue</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: '#757FEF' }}>Status</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: '#757FEF' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -102,13 +104,22 @@ export default function AdminCoursesPage() {
                   </td>
                   <td className="px-5 py-3 text-sm" style={{ color: '#5B5B98' }}>{c.lesson_count}</td>
                   <td className="px-5 py-3 text-sm font-semibold" style={{ color: '#00B69B' }}>${c.revenue || 0}</td>
-                  <td className="px-5 py-3">
+                    <td className="px-5 py-3">
                     <span className="px-2.5 py-1 rounded text-xs font-semibold" style={{
                       backgroundColor: c.is_published ? 'rgba(0, 182, 155, 0.1)' : 'rgba(238, 54, 140, 0.1)',
                       color: c.is_published ? '#00B69B' : '#EE368C'
                     }}>
                       {c.is_published ? 'Published' : 'Draft'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/courses/${c.id}/edit`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium no-underline transition"
+                      style={{ backgroundColor: 'rgba(117, 127, 239, 0.1)', color: '#757FEF' }}
+                    >
+                      <FiEdit2 size={13} /> Edit
+                    </Link>
                   </td>
                 </tr>
               ))}

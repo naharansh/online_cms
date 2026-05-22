@@ -10,7 +10,8 @@ export default function AssignmentsPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [assignments, setAssignments] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState({});
+  const [submissionTexts, setSubmissionTexts] = useState({});
   const [submitting, setSubmitting] = useState(null);
 
   useEffect(() => {
@@ -19,31 +20,23 @@ export default function AssignmentsPage() {
   }, [courseId, user, router]);
 
   const handleSubmit = async (assignmentId) => {
-    if (!selectedFile) { toast.error('Please select a file'); return; }
+    const file = selectedFiles[assignmentId];
+    const text = submissionTexts[assignmentId] || '';
+    if (!file && !text.trim()) { toast.error('Please select a file or enter submission text'); return; }
     const formData = new FormData();
-    formData.append('file', selectedFile);
+    if (file) formData.append('file', file);
+    if (text.trim()) formData.append('submission_text', text);
     setSubmitting(assignmentId);
     try {
       await assignmentAPI.submit(assignmentId, formData);
       toast.success('Assignment submitted!');
-      setSelectedFile(null);
+      setSelectedFiles(prev => ({ ...prev, [assignmentId]: null }));
       const res = await assignmentAPI.getByCourse(courseId);
       setAssignments(res.data);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Submission failed');
     } finally {
       setSubmitting(null);
-    }
-  };
-
-  const handleGrade = async (submissionId, score, feedback, assignmentId) => {
-    try {
-      await assignmentAPI.grade(submissionId, { score, feedback });
-      toast.success('Grade saved!');
-      const res = await assignmentAPI.getSubmissions(assignmentId);
-      return res.data;
-    } catch (err) {
-      toast.error('Failed to grade');
     }
   };
 
@@ -63,17 +56,28 @@ export default function AssignmentsPage() {
               a.submission_id ? (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-green-700 font-medium">Submitted</p>
-                  {a.my_score !== null && (
+                  {a.my_score !== null ? (
                     <p className="text-green-600 text-sm mt-1">Score: {a.my_score}/{a.max_score} | Feedback: {a.my_feedback || 'Pending'}</p>
+                  ) : (
+                    <p className="text-yellow-600 text-sm mt-1">Awaiting grade</p>
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} className="text-sm" />
-                  <button onClick={() => handleSubmit(a.id)} disabled={submitting === a.id}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-                    {submitting === a.id ? 'Submitting...' : 'Submit'}
-                  </button>
+                <div className="space-y-3">
+                  <textarea
+                    value={submissionTexts[a.id] || ''}
+                    onChange={e => setSubmissionTexts(prev => ({ ...prev, [a.id]: e.target.value }))}
+                    rows={3}
+                    placeholder="Write your submission (optional)"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                  />
+                  <div className="flex items-center gap-3">
+                    <input type="file" onChange={(e) => setSelectedFiles(prev => ({ ...prev, [a.id]: e.target.files[0] }))} className="text-sm" />
+                    <button onClick={() => handleSubmit(a.id)} disabled={submitting === a.id}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                      {submitting === a.id ? 'Submitting...' : 'Submit'}
+                    </button>
+                  </div>
                 </div>
               )
             )}

@@ -5,7 +5,6 @@ const BASE_URL = API_URL.replace('/api', '');
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {
@@ -34,6 +33,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
+  createUser: (data) => api.post('/auth/create-user', data),
 };
 
 export const userAPI = {
@@ -47,8 +47,8 @@ export const courseAPI = {
   getAll: (params) => api.get('/courses', { params }),
   getInstructorCourses: () => api.get('/courses/instructor'),
   getById: (id) => api.get(`/courses/${id}`),
-  create: (data) => api.post('/courses', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, data) => api.put(`/courses/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data) => api.postForm('/courses', data),
+  update: (id, data) => api.putForm(`/courses/${id}`, data),
   delete: (id) => api.delete(`/courses/${id}`),
 };
 
@@ -56,8 +56,8 @@ export const moduleAPI = {
   create: (courseId, data) => api.post(`/modules/${courseId}`, data),
   update: (id, data) => api.put(`/modules/${id}`, data),
   delete: (id) => api.delete(`/modules/${id}`),
-  addLesson: (moduleId, data) => api.post(`/modules/${moduleId}/lessons`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  updateLesson: (id, data) => api.put(`/modules/lessons/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  addLesson: (moduleId, data) => api.postForm(`/modules/${moduleId}/lessons`, data),
+  updateLesson: (id, data) => api.putForm(`/modules/lessons/${id}`, data),
   deleteLesson: (id) => api.delete(`/modules/lessons/${id}`),
 };
 
@@ -80,8 +80,8 @@ export const progressAPI = {
 
 export const assignmentAPI = {
   getByCourse: (courseId) => api.get(`/assignments/course/${courseId}`),
-  create: (data) => api.post('/assignments', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  submit: (assignmentId, data) => api.post(`/assignments/submit/${assignmentId}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data) => api.post('/assignments', data),
+  submit: (assignmentId, data) => api.postForm(`/assignments/submit/${assignmentId}`, data),
   grade: (submissionId, data) => api.put(`/assignments/grade/${submissionId}`, data),
   getSubmissions: (assignmentId) => api.get(`/assignments/submissions/${assignmentId}`),
 };
@@ -104,6 +104,17 @@ export const paymentAPI = {
   createPayment: (data) => api.post('/payments/create-payment', data),
   getHistory: () => api.get('/payments/history'),
   getRevenue: () => api.get('/payments/revenue'),
+};
+
+export const taskAPI = {
+  getByLesson: (lessonId) => api.get(`/tasks/lesson/${lessonId}`),
+  getByCourse: (courseId) => api.get(`/tasks/course/${courseId}`),
+  create: (data) => api.post('/tasks', data),
+  update: (id, data) => api.put(`/tasks/${id}`, data),
+  delete: (id) => api.delete(`/tasks/${id}`),
+  submit: (taskId, data) => api.post(`/tasks/submit/${taskId}`, data),
+  getSubmissions: (taskId) => api.get(`/tasks/submissions/${taskId}`),
+  grade: (submissionId, data) => api.put(`/tasks/grade/${submissionId}`, data),
 };
 
 export const dashboardAPI = {
