@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { FiEdit2, FiClock, FiUsers, FiBookOpen, FiBarChart2, FiPlayCircle, FiCheckCircle, FiAward, FiMonitor } from 'react-icons/fi';
 import Loader from '@/components/Loader';
 import CourseImage from '@/components/CourseImage';
+import PaymentModal from '@/components/PaymentModal';
 
 export default function CourseDetailPage() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState(null);
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
     courseAPI.getById(id).then(res => setCourse(res.data)).catch(() => router.push('/courses'));
@@ -26,7 +28,12 @@ export default function CourseDetailPage() {
   }, [id, user]);
 
   const handleEnroll = async () => {
+    if (course.price > 0) { setShowPayment(true); return; }
     if (!user) { router.push('/login'); return; }
+    await doEnroll();
+  };
+
+  const doEnroll = async () => {
     try {
       await enrollmentAPI.enroll({ course_id: parseInt(id) });
       toast.success('Enrolled successfully!');
@@ -34,6 +41,12 @@ export default function CourseDetailPage() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Enrollment failed');
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPayment(false);
+    if (!user) { router.push('/login'); return; }
+    doEnroll();
   };
 
   if (loading || !course) return (
@@ -175,6 +188,7 @@ export default function CourseDetailPage() {
           </div>
         </div>
       </div>
+      {showPayment && <PaymentModal course={course} onClose={() => setShowPayment(false)} onSuccess={handlePaymentSuccess} />}
     </div>
   );
 }
