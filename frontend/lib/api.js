@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://online-cms-3xij.onrender.com/api';
+const BASE_URL = API_URL.replace('/api', '');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -115,3 +116,4 @@ export const dashboardAPI = {
 };
 
 export default api;
+export { BASE_URL };

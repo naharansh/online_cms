@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { BASE_URL } from '@/lib/api';
 
 export default function CourseImage({ course, className }) {
   const [src, setSrc] = useState(getLocalImage(course));
@@ -25,7 +26,7 @@ export default function CourseImage({ course, className }) {
       className={className}
       onError={() => {
         if (course.thumbnail) {
-          setSrc(`http://localhost:5000${course.thumbnail}`);
+          setSrc(`${BASE_URL}${course.thumbnail}`);
         } else {
           setShowFallback(true);
         }

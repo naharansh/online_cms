@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { courseAPI, enrollmentAPI, progressAPI, assignmentAPI, quizAPI, certificateAPI } from '@/lib/api';
+import { courseAPI, enrollmentAPI, progressAPI, assignmentAPI, quizAPI, certificateAPI, BASE_URL } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import Loader from '@/components/Loader';
@@ -83,7 +83,7 @@ export default function LearnPage() {
             <div>
               <div className="aspect-video bg-black rounded-xl flex items-center justify-center mb-4">
                 {currentLesson.video_url ? (
-                  <video controls className="w-full h-full rounded-xl" src={`http://localhost:5000${currentLesson.video_url}`} />
+                  <video controls className="w-full h-full rounded-xl" src={`${BASE_URL}${currentLesson.video_url}`} />
                 ) : (
                   <p className="text-white text-lg">Video not available</p>
                 )}
@@ -95,7 +95,7 @@ export default function LearnPage() {
                   Mark as Complete
                 </button>
                 {currentLesson.notes_url && (
-                  <a href={`http://localhost:5000${currentLesson.notes_url}`} target="_blank" className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200">
+                  <a href={`${BASE_URL}${currentLesson.notes_url}`} target="_blank" className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200">
                     Download Notes
                   </a>
                 )}
